@@ -1,0 +1,26 @@
+# Dart / Flutter build output and tool caches
+.dart_tool/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# A package doesn't commit its lock file: the app that uses the SDK resolves versions.
+pubspec.lock
+
+# IDE and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# FVM
+.fvm/
+
+# Claude Code: personal settings and the guard hook marker (team settings in .claude/settings.json ARE committed)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/.dirty

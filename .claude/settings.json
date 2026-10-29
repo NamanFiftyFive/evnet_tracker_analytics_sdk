@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "disableBypassPermissionsMode": "disable",
+    "deny": [
+      "Read(**/.env)",
+      "Edit(**/.env)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.claude/hooks/**)",
+      "Bash(sudo *)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Read(**/*.jks)",
+      "Read(**/*.keystore)",
+      "Read(**/key.properties)",
+      "Edit(/lib/l10n/generated/**)",
+      "Edit(/pubspec.lock)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "Bash(fvm flutter pub add*)",
+      "Bash(fvm flutter pub upgrade*)",
+      "Bash(fvm dart pub add*)"
+    ],
+    "allow": [
+      "Bash(fvm flutter test*)",
+      "Bash(fvm flutter analyze*)",
+      "Bash(fvm flutter gen-l10n)",
+      "Bash(fvm flutter pub get)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\" pre",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\" post",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.py\" stop",
+            "timeout": 300,
+            "statusMessage": "Running flutter analyze and tests (SDK) before finishing..."
+          }
+        ]
+      }
+    ]
+  }
+}
