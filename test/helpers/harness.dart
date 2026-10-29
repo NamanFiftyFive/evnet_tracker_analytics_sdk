@@ -16,7 +16,13 @@ class FakeTransport extends EventTransport {
   Completer<void>? gate;
   Object? throwOnSend;
 
+  /// Events copied to the dev dashboard (only when the config sets `devServer`).
+  final List<TrackedEvent> devCopies = [];
+
   List<TrackedEvent> get sent => batches.expand((b) => b).toList();
+
+  @override
+  Future<void> sendToDevServer(DeviceContext context, List<TrackedEvent> events) async => devCopies.addAll(events);
 
   @override
   Future<SendResult> send(DeviceContext context, List<TrackedEvent> events) async {

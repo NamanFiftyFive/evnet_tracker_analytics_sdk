@@ -36,7 +36,11 @@ class EventQueueNotifier extends Notifier<QueueState> {
   }
 
   void add(TrackedEvent event) {
-    final config = requireSetup(ref).config;
+    final setup = requireSetup(ref);
+    final config = setup.config;
+    if (config.devServerUri != null) {
+      unawaited(ref.read(eventTransportProvider).sendToDevServer(setup.context, [event]));
+    }
     var pending = [...state.pending, event];
     if (pending.length > config.maxQueueSize) {
       pending = pending.sublist(pending.length - config.maxQueueSize); // drop the oldest

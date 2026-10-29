@@ -43,7 +43,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EventTracker.init(const TrackerConfig(
     apiKey: 'pk_live_…',
-    host: 'http://localhost:8000',   // Android emulator: http://10.0.2.2:8000
     debug: true,                     // log to the console while developing
   ));
   runApp(const CarApp());
@@ -86,8 +85,17 @@ EventTracker.track('test_drive_booked', {'model': 'Nexon EV', 'showroom': 'Baner
 Automatic events: `$app_open`, `$app_foreground`, `$app_background` (turn off with
 `trackAppLifecycle: false`), `$screen` (with the observer), `$identify`.
 
-`TrackerConfig` options: `flushInterval` (10 s), `flushAt` (20), `maxBatchSize` (100),
-`maxQueueSize` (1000), `sessionTimeout` (30 min), `trackAppLifecycle` (true), `debug` (false).
+Events go to the hosted server (`TrackerConfig.defaultHost`, https://analytics-tracker-backend.fly.dev)
+unless `host` is set: a local backend is `host: 'http://localhost:8000'` (Android emulator:
+`http://10.0.2.2:8000`), a self-hosted one is its own URL.
+
+`TrackerConfig` options: `host` (hosted server), `flushInterval` (10 s), `flushAt` (20), `maxBatchSize` (100),
+`maxQueueSize` (1000), `sessionTimeout` (30 min), `trackAppLifecycle` (true), `debug` (false),
+`devServer` (none).
+
+`devServer` (e.g. `http://localhost:7777`): in debug builds, each event is also posted to
+`<devServer>/events` as it is tracked (same body as the ingest request, no API key), so a local dev
+dashboard can show events live. Best effort and ignored in release builds; the real sending is unchanged.
 
 ## Riverpod
 
@@ -144,7 +152,7 @@ test/
 cd event_tracker_analytics
 fvm flutter pub get
 fvm flutter analyze
-fvm flutter test                 # 59 tests, no network or device needed
+fvm flutter test                 # 65 tests, no network or device needed
 fvm flutter test --coverage      # ~94%; the rest is Android/iOS device details that need a real device
 ```
 

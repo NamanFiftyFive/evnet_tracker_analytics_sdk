@@ -31,6 +31,25 @@ void main() {
       expect(pendingNames, ['e2', 'e3', 'e4']);
     });
 
+    test('with devServer set, each event is copied to the dev dashboard as it is tracked', () async {
+      await start(config: const TrackerConfig(
+        apiKey: 'k', host: 'http://test', devServer: 'http://localhost:7777', flushAt: 1000,
+        flushInterval: Duration(hours: 1), trackAppLifecycle: false,
+      ));
+      EventTracker.track('a');
+      EventTracker.track('b');
+      await pumpEventQueue();
+      expect(transport.devCopies.map((e) => e.event), ['a', 'b']);
+      expect(pendingNames, ['a', 'b'], reason: 'still sent to the real server as usual');
+    });
+
+    test('without devServer nothing is copied', () async {
+      await start();
+      EventTracker.track('a');
+      await pumpEventQueue();
+      expect(transport.devCopies, isEmpty);
+    });
+
     test('empty event names and user ids are ignored', () async {
       await start();
       EventTracker.track('');

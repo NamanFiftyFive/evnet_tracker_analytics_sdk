@@ -2,7 +2,7 @@
 class TrackerConfig {
   const TrackerConfig({
     required this.apiKey,
-    required this.host,
+    this.host = defaultHost,
     this.flushInterval = const Duration(seconds: 10),
     this.flushAt = 20,
     this.maxBatchSize = 100,
@@ -11,12 +11,17 @@ class TrackerConfig {
     this.trackAppLifecycle = true,
     this.debug = false,
     this.ingestPath = '/api/v1/ingest/batch',
+    this.devServer,
   });
+
+  /// The hosted analytics server. Apps only set [host] for a local or self-hosted backend.
+  static const defaultHost = 'https://analytics-tracker-backend.fly.dev';
 
   /// The project's API key from the dashboard, e.g. `pk_live_...`.
   final String apiKey;
 
-  /// Base URL of the analytics server, e.g. `https://analytics.example.com`.
+  /// Base URL of the analytics server; defaults to [defaultHost].
+  /// Local backend: `http://localhost:8000` (Android emulator: `http://10.0.2.2:8000`).
   final String host;
 
   /// Queued events are sent at least this often.
@@ -42,5 +47,17 @@ class TrackerConfig {
 
   final String ingestPath;
 
-  Uri get ingestUri => Uri.parse(host.replaceAll(RegExp(r'/+$'), '') + ingestPath);
+  /// The local dev dashboard, e.g. `http://localhost:7777`. In debug builds each event is also
+  /// copied there as it is tracked, to watch events live. Ignored in release builds.
+  final String? devServer;
+
+  Uri get ingestUri => Uri.parse(_trimSlashes(host) + ingestPath);
+
+  /// Where the dev copy of events goes; null when [devServer] is not set.
+  Uri? get devServerUri {
+    final server = devServer;
+    return server == null || server.isEmpty ? null : Uri.parse('${_trimSlashes(server)}/events');
+  }
+
+  static String _trimSlashes(String url) => url.replaceAll(RegExp(r'/+$'), '');
 }

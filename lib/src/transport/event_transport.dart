@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/tracker_config.dart';
@@ -34,6 +35,7 @@ class EventTransport {
   final http.Client client;
 
   static const _timeout = Duration(seconds: 15);
+  static const _devServerTimeout = Duration(seconds: 2);
 
   Future<SendResult> send(DeviceContext context, List<TrackedEvent> events) async {
     try {
@@ -59,6 +61,27 @@ class EventTransport {
       return const SendResult(SendOutcome.retryLater, message: 'Request timed out');
     } catch (error) {
       return SendResult(SendOutcome.retryLater, message: 'Network error: $error');
+    }
+  }
+
+  /// Copies events to the local dev dashboard ([TrackerConfig.devServer]), debug builds only.
+  /// Best effort: no retries, and errors are ignored (the dashboard may not be running).
+  Future<void> sendToDevServer(DeviceContext context, List<TrackedEvent> events) async {
+    final uri = config.devServerUri;
+    if (uri == null || !kDebugMode) return;
+    try {
+      await client
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'context': context.toJson(),
+              'events': events.map((e) => e.toJson()).toList(),
+            }),
+          )
+          .timeout(_devServerTimeout);
+    } catch (_) {
+      // Dev dashboard not running: nothing to do.
     }
   }
 

@@ -96,4 +96,41 @@ void main() {
     expect(withSlash.ingestUri, without.ingestUri);
     expect(without.ingestUri.toString(), 'http://10.0.2.2:8000/api/v1/ingest/batch');
   });
+
+  test('host defaults to the hosted server', () {
+    const config = TrackerConfig(apiKey: 'k');
+    expect(config.host, TrackerConfig.defaultHost);
+    expect(config.ingestUri.toString(), '${TrackerConfig.defaultHost}/api/v1/ingest/batch');
+  });
+
+  group('dev dashboard copy', () {
+    const devConfig = TrackerConfig(apiKey: 'pk_live_abc', host: 'https://analytics.example.com', devServer: 'http://localhost:7777/');
+
+    test('posts the same body to <devServer>/events, without the API key', () async {
+      late http.Request request;
+      await EventTransport(devConfig, MockClient((r) async {
+        request = r;
+        return http.Response('', 204);
+      })).sendToDevServer(context, [event]);
+
+      expect(request.url.toString(), 'http://localhost:7777/events');
+      expect(request.headers.containsKey('X-API-Key'), isFalse, reason: 'the key only goes to the real server');
+      expect((jsonDecode(request.body) as Map)['events'], [event.toJson()]);
+    });
+
+    test('does nothing when devServer is not set', () async {
+      var calls = 0;
+      await EventTransport(config, MockClient((_) async {
+        calls++;
+        return http.Response('', 204);
+      })).sendToDevServer(context, [event]);
+      expect(config.devServerUri, isNull);
+      expect(calls, 0);
+    });
+
+    test('a dashboard that is not running is ignored', () async {
+      final client = MockClient((_) => throw http.ClientException('Connection refused'));
+      await expectLater(EventTransport(devConfig, client).sendToDevServer(context, [event]), completes);
+    });
+  });
 }
